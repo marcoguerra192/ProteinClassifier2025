@@ -153,6 +153,116 @@ def num_vertices_VTK( source_file : str | Path):
 
     return N_Verts
 
+def convertVTK_to_numpy( source_file : str | Path ):
+    '''Read a VTK source file and parse the contents. First the vertices, then 
+    the triangles, next the potentials, finally the normal potentials.
+    It is assumed the fields appear in this order.
+    Store the output and return it as numpy arrays.
+
+    PARAMS:
+    source_file : str | Path. An input vtk file from which to read the points
+
+    OUTPUT:
+    vertices : np.array of shape (NVerts, 3), dtype float
+    triangles : np.array of shape (NTris, 3), dtype int
+    potentials : np.array of shape (NVerts, 3), dtype float
+    normal_potentials : np.array of shape (NVerts, 3), dtype float
+    '''
+
+    with open(source_file, 'r') as f:
+        
+        for _ in range(5): # The first five lines are a constant header
+            f.readline()
+
+        # the fifth line contains the number of points as the second word
+        line = f.readline().strip().split()
+        N_Verts = int(line[1])
+
+        points = np.zeros( (N_Verts , 3), dtype=float )
+
+        line_counter = 0
+        
+        for line in f: 
+        
+            if line_counter >= N_Verts:
+                break
+
+            NewP = line.strip().split()
+            NewP = [float(x) for x in NewP]
+
+            points[ line_counter , : ] = np.array(NewP)
+            
+            line_counter += 1
+
+        # the next line contains the number of TRIANGLES as the second/third word??
+        # line = f.readline().strip().split() ->> it's already READ!!
+        line = line.strip().split()
+        N_Tris = int(line[1])
+
+        triangles = np.zeros( (N_Tris , 3), dtype=int )
+
+        line_counter = 0
+
+        for line in f: 
+        
+            if line_counter >= N_Tris:
+                break
+
+            NewT = line.strip().split()
+            NewT = [int(x) for x in NewT]
+
+            # first entry is the number 3
+            NewT = NewT[1:]
+
+            triangles[ line_counter , : ] = np.array(NewT)
+            
+            line_counter += 1
+
+        # the next 3 lines contains the Potentials header
+        line = f.readline() # we already know the length is N_Verts
+        line = f.readline()
+        line = f.readline()
+
+        potentials = np.zeros( (N_Verts , 1), dtype=float )
+
+        line_counter = 0
+
+        for line in f: 
+        
+            if line_counter >= N_Verts:
+                break
+
+            NewP = line.strip().split()
+            NewP = [float(x) for x in NewP]
+
+            potentials[ line_counter , : ] = NewP[0]
+            
+            line_counter += 1
+
+        # the next line contains the Normal Potentials header
+        line = f.readline().strip().split() # we already know the length is N_Verts
+
+        norm_potentials = np.zeros( (N_Verts , 1), dtype=float )
+
+        line_counter = 0
+
+        for line in f: 
+        
+            if line_counter >= N_Verts:
+                break
+
+            NewNP = line.strip().split()
+            NewNP = [float(x) for x in NewNP]
+
+            norm_potentials[ line_counter , : ] = NewNP[0]
+            
+            line_counter += 1
+
+    return points, triangles, potentials, norm_potentials
+
+        
+    
+
         
         
 

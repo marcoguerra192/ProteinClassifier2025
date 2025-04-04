@@ -46,6 +46,7 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
     counter = 0
 
     train_losses = []
+    #true_tr_losses = []
     val_losses = []
 
     for epoch in range(N_epochs):  # Train for up to N_epochs epochs
@@ -67,12 +68,26 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
         # Validation Loss
         
         model.eval()
+
+        # ### TRUE LOSS
+        # true_tr_loss = 0.0
+        # with torch.no_grad():
+        #     for X_batch, y_batch in train_loader:
+        #         outputs = model(X_batch)
+        #         loss = criterion(outputs, y_batch)
+        #         true_tr_loss += loss.item()
+
+        # true_tr_loss /= len(train_loader)
+        # true_tr_losses.append(true_tr_loss)
+
+        
         val_loss = 0.0
         with torch.no_grad():
             for X_batch, y_batch in val_loader:
                 outputs = model(X_batch)
                 loss = criterion(outputs, y_batch)
                 val_loss += loss.item()
+
         
         val_loss /= len(val_loader)
         val_losses.append(val_loss)
@@ -94,6 +109,7 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
 
         plt.plot(train_losses, label="Train Loss")
         plt.plot(val_losses, label="Validation Loss")
+        #plt.plot(true_tr_losses, label="True Training Loss")
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
         plt.grid()

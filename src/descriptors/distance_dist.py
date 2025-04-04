@@ -55,4 +55,17 @@ def centroid( points ):
 
     return centroid
 
+def distances_from_point(points, point):
+    ''' Compute a vector of distances between
+    each point in points and the point
+
+    PARAMS:
+    points : np.array of shape (NPoints, 3)
+    point : np.array of shape (3, )
+    OUTPUT:
+    distances : np.array of shape (NPoints, 1)
+    '''
+
+    return np.linalg.norm( points - point , axis=1)
+
     
