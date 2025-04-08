@@ -46,10 +46,10 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
 
     if model == 'Combined':
 
-        # 3 quantiles, 3 sumulative radial potential, num of pairs with lifetime > threshold
+        # 3 quantiles, 3 cumulative radial potentials, num of pairs with lifetime > threshold
         # for dim 0,1,2 , birth and death of longest H_0 bar, potential at corresponding 
         # generating vertices
-        N_Features = 3 + 3 + 3 + 2 + 2
+        N_Features = len(which_quantiles) + len(which_quantiles) + 3 + 2 + 2
         
         data = np.zeros(( N_Files ,N_Features) , dtype = float)
     
@@ -107,7 +107,7 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
 
             quantiles = quantiles_of_distance(points, center, which_quantiles)
             
-            row[0:3] = np.array(quantiles).reshape( (1, len(which_quantiles)) )
+            row[0:len(which_quantiles)] = np.array(quantiles).reshape( (1, len(which_quantiles)) )
 
             dists = distances_from_point(points, center) # vector of distances of each point from centroid
 
@@ -122,7 +122,7 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
 
             cumulative_charge_at_quantiles = radial_charge[ significant_entries ] # pick the corresponding charges
 
-            row[3:6] = cumulative_charge_at_quantiles
+            row[len(which_quantiles):2*len(which_quantiles)] = cumulative_charge_at_quantiles
 
             read_pers_file = './data/data/sublevelset_filtrations/train_set/' + filename + '.vtk.npz'
 
@@ -152,20 +152,20 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
             mask2 = (pers2 >= Threshold) & (pers2 < np.inf)
             count2 = np.sum(mask2)
 
-            row[6:9] = np.array([ count0 , count1 , count2 ])
+            row[2*len(which_quantiles):2*len(which_quantiles)+3] = np.array([ count0 , count1 , count2 ])
 
             longest0_ind = np.argmax(pers0[ pers0 < np.inf])
             
             longest0 = dgm0[longest0_ind,:] # longest interval in H_0
 
-            row[9:11] = longest0
+            row[2*len(which_quantiles)+3:2*len(which_quantiles)+5] = longest0
 
             # Find generating vertices and their potentials
             gen_verts = gens[0][0][longest0_ind,:] # gens[0] is finite pairs, [0] is dimension 0, next index is which entry
 
             gen_potentials = potentials[ gen_verts ].reshape((2,)) # Find the potentials at the vertices creating the largest CC
 
-            row[11:] = gen_potentials
+            row[2*len(which_quantiles)+5:] = gen_potentials
 
             data[j,:] = row
             
