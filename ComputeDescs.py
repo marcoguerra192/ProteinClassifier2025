@@ -24,10 +24,10 @@ data_base = './data/data/'
 data_source = os.path.join(data_base, 'train_set/')
 
 # set params for the run
-Model = 'AlphaProminent'
+#Model = 'AlphaProminent'
 #Model = 'quantiles'
-
 #Model = 'Combined'
+Model = 'Sectors'
 
 params = { 'data':data_base}
 params.update(  { 'Num_Prominent' : Num_Prominent , 'PersImPoints' : PersImPoints } )
@@ -37,7 +37,7 @@ data, labels = compute_descriptors(data_source, model=Model, **params)
 
 
 # save descriptors
-save_descs_path = os.path.join(data_base,'saved_descriptors/')
+save_descs_path = os.path.join(data_base,'saved_descriptors/train_set/')
 
 # save
 np.save(os.path.join(save_descs_path, Model+'Data.npy'), data)

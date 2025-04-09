@@ -37,7 +37,13 @@ def quantiles_of_distance( points , centroid , which_quantiles : list = None, **
 
     Dists = np.array(Dists)
 
-    quantiles = [ np.quantile( Dists, q ) for q in which_quantiles]
+    quantiles = [ ]
+    for q in which_quantiles:
+        try:
+            Q = np.quantile( Dists, q ) 
+        except:
+            Q = 0.0
+        quantiles.append(Q)
 
     return quantiles
 

@@ -50,8 +50,12 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
         # for dim 0,1,2 , birth and death of longest H_0 bar, potential at corresponding 
         # generating vertices
         N_Features = len(which_quantiles) + len(which_quantiles) + 3 + 2 + 2
-        
         data = np.zeros(( N_Files ,N_Features) , dtype = float)
+
+    if model == 'Sectors':
+
+        N_Features = len(which_quantiles) + len(which_quantiles) + 2 + 2 + 2 # NO H2!!
+        data = np.zeros(( N_Files ,8*N_Features) , dtype = float) # For 8 sectors!!
     
     # read the labels
     Truth = {}
@@ -60,6 +64,7 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
     
         next(truths, None) # skip first row, it's a header
         for t in truths:
+            pass
             Truth[t[0]] = int(t[1])
     
     source = DataSource( data_source, base_path=data_source)
@@ -72,7 +77,7 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
         # Find the label for the protein we are reading
         filename = os.path.basename(s)
         filename = os.path.splitext(filename)[0]
-        labels.append(Truth[filename])
+        #labels.append(Truth[filename])
 
 
         if model == 'AlphaProminent':

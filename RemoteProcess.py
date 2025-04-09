@@ -17,10 +17,10 @@ import joblib
 import csv
 
 
-source = DataSource( './data/data/train_set/', base_path='./data/data/train_set')
+source = DataSource( './data/data/test_set/', base_path='./data/data/test_set')
 N_Files = len(list(source))
 
-source = DataSource( './data/data/train_set/', base_path='./data/data/train_set')
+source = DataSource( './data/data/test_set/', base_path='./data/data/test_set/')
 
 
 for j,s in enumerate(source):
@@ -32,7 +32,7 @@ for j,s in enumerate(source):
 
     filename = os.path.basename(s)
 
-    output_file = os.path.join( './data/data/train_set_Numpy/', filename )
+    output_file = os.path.join( './data/data/test_set_Numpy/', filename )
 
     np.savez(output_file, points=points, triangles=triangles, potentials=potentials, norm_potentials=norm_potentials)
 
@@ -75,7 +75,7 @@ for j,s in enumerate(source):
 
     gens = st.lower_star_persistence_generators()
 
-    output_file2 = os.path.join( './data/data/sublevelset_filtrations/train_set/', filename )
+    output_file2 = os.path.join( './data/data/sublevelset_filtrations/test_set/', filename )
 
     np.savez(output_file2, dgm0=dgm0, dgm1=dgm1, dgm2=dgm2, gens=gens, allow_pickle=True)
 

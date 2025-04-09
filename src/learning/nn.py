@@ -40,6 +40,38 @@ class SimpleNN(nn.Module):
         x = self.fc4(x)  # No softmax, since CrossEntropyLoss applies it internally
         return x
 
+class Autoencoder(nn.Module):
+    def __init__(self, size : int = 75 , noise : float = 0.0):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Linear(size, 50),
+            nn.ReLU(),
+            nn.Linear(50, 30),
+            nn.ReLU(),
+            nn.Linear(30, 15)  # bottleneck
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(15, 30),
+            nn.ReLU(),
+            nn.Linear(30, 50),
+            nn.ReLU(),
+            nn.Linear(50, size)
+        )
+
+        self.noise = noise
+
+    def forward(self, x):
+        x = x + self.noise * torch.randn_like(x)
+        z = self.encoder(x)
+        x_hat = self.decoder(z)
+        return x_hat
+
+    def encode(self,x):
+
+        return self.encoder(x)
+
+
+
 def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_path, patience=25 ):
 
     best_loss = float('inf')
