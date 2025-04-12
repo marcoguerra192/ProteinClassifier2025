@@ -12,14 +12,17 @@ import sys, os
 from pathlib import Path
 
 import numpy as np
-from gudhi import AlphaComplex
+from gudhi import AlphaComplex, SimplexTree
 from gudhi.representations import ProminentPoints, PersistenceImage
 
 from src.data_reader import DataSource, read_vertices_VTK, num_vertices_VTK
 from .alpha_prominent import AlphaDiag, PersImagesVectorize
-from .distance_dist import quantiles_of_distance, centroid, distances_from_point
+from .distance_dist import quantiles_of_distance, distances_from_point
+from .distance_dist import centroid as Centroid
+from .spherical_sectors import common_sector, which_sector
 
 import csv
+import pickle
 
 def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
     '''Helper function to compute descriptors choosing the appropriate 
@@ -177,6 +180,235 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
             
 
     return data, labels
+
+def compute_spherical_sectors_descs(data_source : str | Path, out_path : str | Path , **kwargs):
+    ''' Compute the required descriptors on the spherical sectors rather
+    than on the whole protein.
+
+    For each protein file, save a file containing a dictionary with 8 fields.
+    Each field is one sector, containing a list of the raw descriptors:
+    [ quantiles , radial_accumulated_potential , Dgm0, Dgm1, gens ]
+    (gens is the generators of each birth and death event).
+
+    Assumes data have been cast to a numpy serialized file.
+    Outputs on out_path.
+
+    '''
+
+    source = DataSource( data_source, base_path=data_source)
+    N_Files = len(list(source))
+    
+    source = DataSource( data_source, base_path=data_source)
+    
+    which_quantiles = kwargs.get('which_quantiles', [.25 , .5 , .75])
+    
+    for j,s in enumerate(source):
+    
+        print(j+1, 'out of', N_Files, flush=True)
+        print(s, flush=True)
+    
+        filename = os.path.basename(s)
+        filename, _ = os.path.splitext(filename)
+    
+        # read points, triangles, potentials, etc
+    
+        read_data_file = './data/data/test_set_Numpy/' + filename + '.vtk.npz'
+        res = np.load( read_data_file, allow_pickle=False )
+    
+        points = res['points']
+        triangles = res['triangles']
+        potentials = res['potentials']
+    
+        N_Verts = points.shape[0]
+    
+        centroid = Centroid(points)
+        dists = distances_from_point(points, centroid)
+    
+        ## NOW SPLIT IN 8 SECTORS
+    
+        SecPoints = []
+        SCs = []
+        for _ in range(8):
+            SCs.append( SimplexTree() )
+            SecPoints.append( [] )
+    
+        for i in range(triangles.shape[0]):
+    
+            t = triangles[i,:]
+            a,b,c = t[0] , t[1] , t[2] 
+            
+            tri = [ a,b,c ] 
+    
+            try:
+                sector = common_sector([points[x,:] for x in tri ], centroid)
+    
+            except ValueError:
+                continue
+            
+            #print(tri)
+            SCs[sector-1].insert( tri )
+            SCs[sector-1].assign_filtration(tri , filtration=np.max( dists[[a,b,c]] ))
+        
+            e1 = [a,b]
+            e2 = [a,c]
+            e3 = [b,c]
+        
+            SCs[sector-1].insert( e1 )
+            SCs[sector-1].assign_filtration(e1 , filtration=np.max( dists[[a,b]] ))
+        
+            SCs[sector-1].insert( e2 )
+            SCs[sector-1].assign_filtration(e2 , filtration=np.max( dists[[a,c]] ))
+        
+            SCs[sector-1].insert( e3 )
+            SCs[sector-1].assign_filtration(e3 , filtration=np.max( dists[[b,c]] ))
+            
+        for p in range(points.shape[0]):
+    
+            sector = which_sector(points[p,:] , centroid)
+    
+            SecPoints[sector-1].append( p )
+        
+            SCs[sector-1].insert([p])
+            SCs[sector-1].assign_filtration([p] , filtration = dists[p] )
+    
+    
+        res = {}
+        
+        for i,st in enumerate(SCs):
+            st.compute_persistence()
+
+            st.set_dimension(3)
+            
+            dgm0 = st.persistence_intervals_in_dimension(0)
+            dgm1 = st.persistence_intervals_in_dimension(1)
+            dgm2 = st.persistence_intervals_in_dimension(2)
+
+            # this is wrt the local indexing, but we must get it wrt the global one
+            gens = st.lower_star_persistence_generators()
+                    
+    
+            if st.num_vertices() > 0:
+    
+                # points in this sector
+                thisPoints = points[SecPoints[i], :]
+                quantiles = quantiles_of_distance(thisPoints, centroid, which_quantiles)
+        
+                ordering = np.argsort(dists[SecPoints[i]]) # sort them by distance
+        
+                SecP = np.array(SecPoints[i], dtype = int)
+        
+                radial_charge = np.cumsum( potentials[SecP[ordering]] ) # potentials ordered by closest to farthest from centroid, cumulative sum
+        
+                significant_entries = [ np.floor( x * thisPoints.shape[0] ) for x in which_quantiles] # entries of radial charge corresponding to the desired quantiles
+                significant_entries = np.array(significant_entries, dtype = int)
+        
+                cumulative_charge_at_quantiles = radial_charge[ significant_entries ] 
+            else: 
+                quantiles = [ 0.0 ] * len(which_quantiles)
+                cumulative_charge_at_quantiles = np.zeros( ( len(which_quantiles) ) )
+    
+            res[i+1] = [ quantiles, cumulative_charge_at_quantiles, dgm0 , dgm1, dgm2, gens ]
+    
+    
+        with open(os.path.join( out_path, filename ) , 'wb') as out_file:
+            pickle.dump(res , out_file)
+
+        break
+
+
+def process_spherical_sectors_descriptors(data_source : str | Path, len_quant : int):
+    '''This function takes the files saved by compute_spherical_sectors_descs and returns a 
+    numpy matrix containing the processed dataset. 
+    The required steps are: choosing the dgm information and the generators. 
+    '''
+
+    source = DataSource( data_source, base_path=data_source)
+    N_Files = len(list(source))
+    
+    source = DataSource( data_source, base_path=data_source)
+
+    N_Features = len_quant*2 + 3 + 2 + 2
+    N_sectors = 8
+    data = np.zeros( (N_Files , N_sectors* N_Features) )
+
+    for j,s in enumerate(source):
+    
+        print(j+1, 'out of', N_Files, flush=True)
+        print(s, flush=True)
+
+        #row = np.array()
+
+        filename = os.path.basename(s)
+        filename, _ = os.path.splitext(filename)
+
+        # unfortunately we need the larger potentials vector
+        read_data_file = './data/data/train_set_Numpy/' + filename + '.vtk.npz'
+        res = np.load( read_data_file, allow_pickle=False )
+
+        Potentials = res['potentials']
+    
+        # read descriptors
+    
+        read_data_file = './data/sectors/sublevelset_filtrations/train_set/' + filename
+        read_dict = np.load( read_data_file, allow_pickle=True )
+
+        row = np.array([])
+
+        sectors = list(read_dict.keys())
+
+        for sect in sectors:
+
+            res = read_dict[sect]
+
+            quantiles = np.array(res[0])
+            potentials = np.array(res[1])
+            dgm0 = res[2]
+            dgm1 = res[3]
+            dgm2 = res[4]
+            gens = res[5]
+    
+            Lambda = 1.0/10
+            Threshold = quantiles[1] * Lambda # TRY ONE TENTH OF THE MEDIAN
+    
+            pers0 = dgm0[:,1] - dgm0[:,0]
+            mask0 = (pers0 >= Threshold) & (pers0 < np.inf)
+            count0 = np.sum(mask0).reshape( (1) )
+    
+            pers1 = dgm1[:,1] - dgm1[:,0]
+            mask1 = (pers1 >= Threshold) & (pers1 < np.inf)
+            count1 = np.sum(mask1).reshape( (1) )
+
+            # There is no death to H_2 as we introduce no tetrahedra!
+            pers2 = dgm2[:,1] - dgm2[:,0]
+            mask2 = (pers2 >= Threshold) # so no condition on death time!
+            count2 = np.sum(mask2).reshape( (1) )
+
+            try: # if empty use 0.0
+                longest0_ind = np.argmax(pers0[ pers0 < np.inf])
+            except ValueError:
+                longest0 = np.array([ 0.0 , 0.0 ])
+                gen_potentials = np.zeros( (2) , dtype=float )
+            else:
+                longest0 = dgm0[longest0_ind,:] # longest interval in H_0
+                gen_verts = gens[0][0][longest0_ind,:] # gens[0] is finite pairs, [0] is dimension 0, next index is which entry
+                gen_potentials = Potentials[ gen_verts ].reshape((2,)) # Find the potentials at the vertices creating the largest CC
+
+
+            sect_row = np.concatenate( [quantiles , potentials , count0 , count1 , count2 , longest0 , gen_potentials] )
+
+            row = np.concatenate( [row , sect_row] )
+
+
+        data[ j , : ] = row
+
+
+    np.save('./data/sectors/saved_descriptors/test_set/sector_sublevel.npy' , data)
+
+        
+    
+    
+    
+        
 
 
 
