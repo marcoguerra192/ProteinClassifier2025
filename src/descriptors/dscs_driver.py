@@ -313,7 +313,6 @@ def compute_spherical_sectors_descs(data_source : str | Path, out_path : str | P
         with open(os.path.join( out_path, filename ) , 'wb') as out_file:
             pickle.dump(res , out_file)
 
-        break
 
 
 def process_spherical_sectors_descriptors(data_source : str | Path, len_quant : int):
@@ -342,14 +341,14 @@ def process_spherical_sectors_descriptors(data_source : str | Path, len_quant : 
         filename, _ = os.path.splitext(filename)
 
         # unfortunately we need the larger potentials vector
-        read_data_file = './data/data/train_set_Numpy/' + filename + '.vtk.npz'
+        read_data_file = './data/data/test_set_Numpy/' + filename + '.vtk.npz'
         res = np.load( read_data_file, allow_pickle=False )
 
         Potentials = res['potentials']
     
         # read descriptors
     
-        read_data_file = './data/sectors/sublevelset_filtrations/train_set/' + filename
+        read_data_file = './data/sectors/sublevelset_filtrations/test_set/' + filename
         read_dict = np.load( read_data_file, allow_pickle=True )
 
         row = np.array([])

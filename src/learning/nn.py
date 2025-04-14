@@ -7,11 +7,14 @@ Marco Guerra
 
 # NN models
 
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
 from torch.utils.data import DataLoader, TensorDataset
+from sklearn.metrics import accuracy_score
 from IPython.display import display, clear_output
 import matplotlib.pyplot as plt
 
@@ -83,6 +86,8 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
     train_losses = []
     #true_tr_losses = []
     val_losses = []
+    acc_epochs = []
+    accuracies = []
 
     for epoch in range(N_epochs):  # Train for up to N_epochs epochs
 
@@ -104,17 +109,6 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
         
         model.eval()
 
-        # ### TRUE LOSS
-        # true_tr_loss = 0.0
-        # with torch.no_grad():
-        #     for X_batch, y_batch in train_loader:
-        #         outputs = model(X_batch)
-        #         loss = criterion(outputs, y_batch)
-        #         true_tr_loss += loss.item()
-
-        # true_tr_loss /= len(train_loader)
-        # true_tr_losses.append(true_tr_loss)
-
         
         val_loss = 0.0
         with torch.no_grad():
@@ -127,6 +121,22 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
         val_loss /= len(val_loader)
         val_losses.append(val_loss)
         print(f"Epoch {epoch+1}, Validation Loss: {val_loss:.4f}")
+
+        if epoch % 20 == 0: # check accuracy
+
+            model.eval()  # Set model to evaluation mode
+            batch_acc = []
+            acc_epochs.append(epoch)
+            with torch.no_grad():
+                for X_batch, y_batch in val_loader:
+                    outputs = model(X_batch)
+                    predicted = torch.argmax(outputs, dim=1)  # Get class with highest probability
+                    predicted = predicted.cpu().numpy()
+                    batch_acc.append( accuracy_score(predicted, y_batch ) )
+                    
+            
+            batch_acc = np.array(batch_acc)
+            accuracies.append( np.mean(batch_acc) )
     
         # Early Stopping Check
         if val_loss < best_loss:
@@ -142,6 +152,9 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
         # Live plot update
         clear_output(wait=True)
 
+        plt.figure(figsize=(12, 4.5))
+        
+        plt.subplot(1, 2, 1)
         plt.plot(train_losses, label="Train Loss")
         plt.plot(val_losses, label="Validation Loss")
         #plt.plot(true_tr_losses, label="True Training Loss")
@@ -151,6 +164,16 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
         plt.grid()
         plt.title("Training vs Validation Loss")
         plt.legend()
+
+        plt.subplot(1, 2, 2)
+        plt.plot(acc_epochs, accuracies, 'o-', label='Val Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.title('Validation Accuracy ')
+        plt.ylim([ 0.0 , 1.0 ])
+        plt.grid(visible=True, which='major', color='k', linestyle='-')
+        plt.grid(visible=True, which='minor', color='k', linestyle='--')
+        plt.legend(loc='lower right')
         plt.show()
 
 
