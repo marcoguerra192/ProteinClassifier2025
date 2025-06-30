@@ -152,7 +152,7 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
         # Live plot update
         clear_output(wait=True)
 
-        plt.figure(figsize=(12, 4.5))
+        plt.figure(figsize=(12, 4))
         
         plt.subplot(1, 2, 1)
         plt.plot(train_losses, label="Train Loss")
@@ -171,8 +171,7 @@ def train(N_epochs,model,criterion, optimizer, train_loader, val_loader, save_pa
         plt.ylabel('Accuracy')
         plt.title('Validation Accuracy ')
         plt.ylim([ 0.0 , 1.0 ])
-        plt.grid(visible=True, which='major', color='k', linestyle='-')
-        plt.grid(visible=True, which='minor', color='k', linestyle='--')
+        plt.grid()
         plt.legend(loc='lower right')
         plt.show()
 
