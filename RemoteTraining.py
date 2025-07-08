@@ -30,11 +30,25 @@ from IPython.display import display, clear_output
 
 from src.learning.nn import SimpleNN, train, predict, Autoencoder
 
+print('TRAINING RUN', flush=True)
+
 dataEncAlpha_aug = np.load('./data/data/saved_descriptors/train_set/EncodedAlphaProminent_aug.npy')
 dataS_aug = np.load('./data/sectors/saved_descriptors/train_set/AugmentedData.npy')
 labels = np.load('./data/sectors/saved_descriptors/train_set/AugmentedLabels.npy')
 
+dataEncAlpha_aug = np.load('./data/data/saved_descriptors/train_set/CleanAlphaProminent_aug.npy')
+dataS_aug = np.load('./data/sectors/saved_descriptors/train_set/AugmentedData.npy')
+labels = np.load('./data/sectors/saved_descriptors/train_set/AugmentedLabels.npy')
+
+#print(dataS_aug.shape)
+#print(dataEncAlpha_aug.shape)
+
+
 data = np.concatenate( [dataS_aug , dataEncAlpha_aug] , axis = 1 )
+
+print('Shape of data')
+print(data.shape, flush=True)
+
 
 StrShSp = StratifiedShuffleSplit(n_splits=15, train_size=0.8, random_state=42)
 
@@ -60,7 +74,7 @@ y_val = torch.tensor(val_labels, dtype=torch.long)
 #WX_val = torch.tensor(data, dtype=torch.float32)
 #Wy_val = torch.tensor(labels, dtype=torch.long)
 
-
+print('Data Loader', flush=True)
 
 # data loader
 train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=128, shuffle=True)
@@ -90,10 +104,12 @@ except:
 criterion = nn.CrossEntropyLoss()  # Cross-entropy loss
 optimizer = optim.Adam(model.parameters(), lr=4e-4, weight_decay=1e-4)  # Adam optimizer
 
-epochs = 2000
+epochs = 5000
 # Early Stopping Parameters
 patience = int(epochs/10)  # Stop if no improvement for 'patience' epochs
 
+print('Start training', flush=True)
+#quit()
 
 train(epochs, model, criterion, optimizer, train_loader, val_loader, trained_model_path, patience)
 
