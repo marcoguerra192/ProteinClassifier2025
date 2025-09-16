@@ -3,35 +3,21 @@
 # Run the learning algorithm for classification of SHREC 2025
 # This file is meant to be run either directly or via nohup
 
-import sys,os
+import os
 from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
 
 import numpy as np
-from src.data_reader import DataSource, read_vertices_VTK, num_vertices_VTK
-from src.descriptors.dscs_driver import compute_descriptors
+from src.data_reader import DataSource
 
-from src.utils import get_free_id, write_jsonl, clear_jsonl
-
-from sklearn.decomposition import PCA, KernelPCA
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.mixture import GaussianMixture as GMM
 from sklearn.model_selection import StratifiedShuffleSplit
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import confusion_matrix, precision_recall_curve
-
-import joblib
+from sklearn.metrics import accuracy_score
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from torchinfo import summary as torch_summary
-
-from IPython.display import display, clear_output
 
 from src.learning.nn import SimpleNN, train, predict, Autoencoder
 import csv
@@ -222,8 +208,12 @@ for classes, counts in sorted_classes:
         majority_voting.append(top_class)
 
 majority_voting = np.array(majority_voting).reshape((len(majority_voting)),)
+np.save('./data/prediction.npy', majority_voting)
 
+print('Final accuracy score:')
 print(accuracy_score(majority_voting, ground_truths))
+
+print('\nFinal prediction saved at ./data/prediction.npy')
 
 # WRITE PREDICTION
 

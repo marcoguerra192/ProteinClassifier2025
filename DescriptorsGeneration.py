@@ -6,16 +6,13 @@
 import sys, os
 from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
+
 
 import numpy as np
-from src.data_reader import DataSource, read_vertices_VTK, num_vertices_VTK, convertVTK_to_numpy
+from src.data_reader import DataSource, convertVTK_to_numpy
 
-from src.descriptors.dscs_driver import compute_descriptors
-from src.descriptors.dscs_driver import compute_spherical_sectors_descs, process_spherical_sectors_descriptors
+from src.descriptors.dscs_driver import compute_descriptors, compute_spherical_sectors_descs, process_spherical_sectors_descriptors
 from src.descriptors.spherical_sectors import spherical_block_permutations
-
-from gudhi.representations import ProminentPoints, PersistenceImage
 
 import csv
 
