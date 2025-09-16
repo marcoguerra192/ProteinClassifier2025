@@ -60,15 +60,15 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
         N_Features = len(which_quantiles) + len(which_quantiles) + 2 + 2 + 2 # NO H2!!
         data = np.zeros(( N_Files ,8*N_Features) , dtype = float) # For 8 sectors!!
     
-    # read the labels
-    Truth = {}
-    with open('./data/data/train_set.csv', 'r') as csvfile:
-        truths = csv.reader(csvfile)
+    # # read the labels
+    # Truth = {}
+    # with open('./data/data/train_set.csv', 'r') as csvfile:
+    #     truths = csv.reader(csvfile)
     
-        next(truths, None) # skip first row, it's a header
-        for t in truths:
-            pass
-            Truth[t[0]] = int(t[1])
+    #     next(truths, None) # skip first row, it's a header
+    #     for t in truths:
+
+    #         Truth[t[0]] = int(t[1])
     
     source = DataSource( data_source, base_path=data_source)
 
@@ -181,7 +181,7 @@ def compute_descriptors( data_source : str | Path, model : str, **kwargs ):
 
     return data, labels
 
-def compute_spherical_sectors_descs(data_source : str | Path, out_path : str | Path , **kwargs):
+def compute_spherical_sectors_descs(data_source : str | Path, NumpySource : str | Path, out_path : str | Path ,  **kwargs):
     ''' Compute the required descriptors on the spherical sectors rather
     than on the whole protein.
 
@@ -212,7 +212,7 @@ def compute_spherical_sectors_descs(data_source : str | Path, out_path : str | P
     
         # read points, triangles, potentials, etc
     
-        read_data_file = './data/data/test_set_Numpy/' + filename + '.vtk.npz'
+        read_data_file = NumpySource + filename + '.vtk.npz'
         res = np.load( read_data_file, allow_pickle=False )
     
         points = res['points']
@@ -315,7 +315,8 @@ def compute_spherical_sectors_descs(data_source : str | Path, out_path : str | P
 
 
 
-def process_spherical_sectors_descriptors(data_source : str | Path, len_quant : int):
+def process_spherical_sectors_descriptors(data_source : str | Path, raw_descriptors : str | Path, numpy_source : str | Path, 
+                                          out_path : str | Path, len_quant : int):
     '''This function takes the files saved by compute_spherical_sectors_descs and returns a 
     numpy matrix containing the processed dataset. 
     The required steps are: choosing the dgm information and the generators. 
@@ -341,14 +342,14 @@ def process_spherical_sectors_descriptors(data_source : str | Path, len_quant : 
         filename, _ = os.path.splitext(filename)
 
         # unfortunately we need the larger potentials vector
-        read_data_file = './data/data/test_set_Numpy/' + filename + '.vtk.npz'
+        read_data_file = numpy_source + filename + '.vtk.npz'
         res = np.load( read_data_file, allow_pickle=False )
 
         Potentials = res['potentials']
     
         # read descriptors
     
-        read_data_file = './data/sectors/sublevelset_filtrations/test_set/' + filename
+        read_data_file = raw_descriptors + filename
         read_dict = np.load( read_data_file, allow_pickle=True )
 
         row = np.array([])
@@ -401,7 +402,7 @@ def process_spherical_sectors_descriptors(data_source : str | Path, len_quant : 
         data[ j , : ] = row
 
 
-    np.save('./data/sectors/saved_descriptors/test_set/sector_sublevel.npy' , data)
+    np.save(out_path, data)
 
         
     
