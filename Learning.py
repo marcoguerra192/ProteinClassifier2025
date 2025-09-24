@@ -167,10 +167,10 @@ print('Majority voting and class frequencies')
 # and break ties by a-priori class frequency
 
 # a-priori class frequency
-uni_classes , class_counts = np.unique(ground_truths, return_counts=True)
+uni_classes , class_counts = np.unique(labels, return_counts=True)
 a_priori_freq = {}
 for i,c in enumerate(uni_classes):
-    a_priori_freq[c] = class_counts[i]
+    a_priori_freq[c] = class_counts[i]/60
 
 # majority vote
 bl_pred = y_pred.reshape(-1,8) # reshape in blocks of 8, each is one protein
