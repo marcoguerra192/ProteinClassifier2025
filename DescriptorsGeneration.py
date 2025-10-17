@@ -25,7 +25,9 @@ verbose = False
 std_out = sys.stdout
 null_out = open(os.devnull, 'w')
 
-    
+
+if sys.version_info < (3, 10):
+    raise RuntimeError("This project requires Python 3.10 or higher.")
 
 print('** Generating descriptors **', flush=True)
 

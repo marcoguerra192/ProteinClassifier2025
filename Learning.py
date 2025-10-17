@@ -3,7 +3,7 @@
 # Run the learning algorithm for classification of SHREC 2025
 # This file is meant to be run either directly or via nohup
 
-import os
+import sys, os
 from pathlib import Path
 import numpy as np
 
@@ -22,6 +22,9 @@ from torchinfo import summary as torch_summary
 from src.learning.nn import SimpleNN, train, predict, Autoencoder
 import csv
 
+
+if sys.version_info < (3, 10):
+    raise RuntimeError("This project requires Python 3.10 or higher.")
 
 print('** Training a classification model **', flush=True)
 
